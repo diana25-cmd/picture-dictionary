@@ -1,5 +1,4 @@
 import json
-import re
 from pathlib import Path
 
 import numpy as np
@@ -14,11 +13,45 @@ SPEED = 0.92
 SAMPLE_RATE = 24000
 
 html = INDEX.read_text(encoding="utf-8")
-m = re.search(r"const AUDIO_CUES\s*=\s*(\{.*?\});\s*const", html, re.S)
-if not m:
+marker = "const AUDIO_CUES = "
+start = html.find(marker)
+if start < 0:
     raise RuntimeError("AUDIO_CUES not found in index.html")
 
-cues = json.loads(m.group(1))
+obj_start = html.find("{", start)
+if obj_start < 0:
+    raise RuntimeError("AUDIO_CUES object start not found")
+
+depth = 0
+in_string = False
+escape = False
+obj_end = None
+
+for pos in range(obj_start, len(html)):
+    ch = html[pos]
+    if in_string:
+        if escape:
+            escape = False
+        elif ch == "\\":
+            escape = True
+        elif ch == '"':
+            in_string = False
+        continue
+
+    if ch == '"':
+        in_string = True
+    elif ch == "{":
+        depth += 1
+    elif ch == "}":
+        depth -= 1
+        if depth == 0:
+            obj_end = pos + 1
+            break
+
+if obj_end is None:
+    raise RuntimeError("AUDIO_CUES object end not found")
+
+cues = json.loads(html[obj_start:obj_end])
 words = list(cues.keys())
 
 OUT.mkdir(parents=True, exist_ok=True)
