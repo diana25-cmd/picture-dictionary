@@ -1,0 +1,43 @@
+name: Generate female dictionary audio
+
+on:
+  push:
+    paths:
+      - ".github/workflows/generate-female-audio.yml"
+      - "scripts/generate_female_audio.py"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y espeak-ng
+
+      - name: Install Kokoro
+        run: pip install "kokoro>=0.9.4" soundfile numpy
+
+      - name: Generate British female audio
+        run: python scripts/generate_female_audio.py
+
+      - name: Commit generated audio
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add audio/female
+          if git diff --cached --quiet; then
+            echo "No audio changes"
+          else
+            git commit -m "Generate British female dictionary audio"
+            git push
+          fi
