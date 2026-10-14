@@ -1,0 +1,40 @@
+name: Generate Sonia dictionary audio
+
+on:
+  push:
+    paths:
+      - ".github/workflows/generate-sonia-audio.yml"
+      - "scripts/generate_sonia_audio.py"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install edge-tts
+        run: pip install --upgrade edge-tts
+
+      - name: Generate slow British female audio
+        run: python scripts/generate_sonia_audio.py
+
+      - name: Commit generated Sonia audio
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add audio/sonia
+          if git diff --cached --quiet; then
+            echo "No audio changes"
+          else
+            git commit -m "Generate Sonia British female dictionary audio"
+            git push
+          fi
