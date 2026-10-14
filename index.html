@@ -120,7 +120,7 @@ button{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="dictionary-build" content="github-pages-female-tts-2026-10-14-v4">
+<meta name="dictionary-build" content="github-pages-female-tts-2026-10-14-v5">
 </head>
 <body>
 <div class="appbar">
@@ -183,51 +183,62 @@ let selectedFemaleVoice = null;
 
 function showToast(msg) {
   toast.textContent = msg; toast.classList.add('show');
-  clearTimeout(showToast.t); showToast.t=setTimeout(()=>toast.classList.remove('show'),1800);
+  clearTimeout(showToast.t); showToast.t=setTimeout(()=>toast.classList.remove('show'),2200);
 }
 
-function scoreFemaleEnglishVoice(v) {
+const FEMALE_VOICE_PRIORITY = [
+  'Google UK English Female',
+  'Google US English',
+  'Microsoft Sonia Online',
+  'Microsoft Libby Online',
+  'Microsoft Aria Online',
+  'Microsoft Jenny Online',
+  'Microsoft Zira',
+  'Samantha',
+  'Martha',
+  'Serena',
+  'Susan',
+  'Hazel',
+  'Karen',
+  'Moira',
+  'Tessa',
+  'Victoria',
+  'Fiona',
+  'Ava',
+  'Allison'
+].map(x => x.toLowerCase());
+
+const MALE_VOICE_MARKERS = [
+  'male','daniel','alex','fred','ralph','albert','arthur',
+  'gordon','oliver','thomas','david','mark','george'
+];
+
+function isKnownFemaleVoice(v) {
   const name = (v.name || '').toLowerCase();
   const lang = (v.lang || '').toLowerCase();
-  let score = 0;
-
-  if (lang === 'en-gb') score += 80;
-  else if (lang.startsWith('en-gb')) score += 70;
-  else if (lang.startsWith('en-')) score += 35;
-  else if (lang === 'en') score += 20;
-  else return -1000;
-
-  const femaleNames = [
-    'samantha','serena','martha','karen','moira','tessa','victoria',
-    'zira','susan','hazel','fiona','ava','allison','siri female',
-    'female','woman','google uk english female','google us english female'
-  ];
-  const maleNames = [
-    'daniel','alex','fred','ralph','albert','arthur','gordon','oliver',
-    'male','man','google uk english male','google us english male'
-  ];
-
-  if (femaleNames.some(n => name.includes(n))) score += 100;
-  if (maleNames.some(n => name.includes(n))) score -= 200;
-  if (v.default) score += 5;
-  if (v.localService) score += 4;
-
-  return score;
+  if (!lang.startsWith('en')) return false;
+  if (MALE_VOICE_MARKERS.some(x => name.includes(x))) return false;
+  if (name.includes('female') || name.includes('woman')) return true;
+  return FEMALE_VOICE_PRIORITY.some(x => name.includes(x));
 }
 
 function chooseFemaleVoice() {
   if (!('speechSynthesis' in window)) return null;
-  const voices = speechSynthesis.getVoices();
+  const voices = speechSynthesis.getVoices().filter(isKnownFemaleVoice);
   if (!voices.length) return null;
-  return voices
-    .map(v => ({v, score: scoreFemaleEnglishVoice(v)}))
-    .filter(x => x.score > -1000)
-    .sort((a,b) => b.score - a.score)[0]?.v || null;
+
+  for (const preferred of FEMALE_VOICE_PRIORITY) {
+    const found = voices.find(v => (v.name || '').toLowerCase().includes(preferred));
+    if (found) return found;
+  }
+
+  return voices.find(v => (v.lang || '').toLowerCase().startsWith('en-gb')) || voices[0] || null;
 }
 
 function refreshFemaleVoice() {
   selectedFemaleVoice = chooseFemaleVoice();
 }
+
 refreshFemaleVoice();
 if ('speechSynthesis' in window) {
   speechSynthesis.addEventListener?.('voiceschanged', refreshFemaleVoice);
@@ -242,18 +253,23 @@ function stopWordAudio() {
 
 function speak(text, card) {
   if (!('speechSynthesis' in window)) {
-    showToast('Озвучка не поддерживается этим браузером');
+    showToast('На этом устройстве браузер не поддерживает озвучку');
     return;
   }
 
   stopWordAudio();
   refreshFemaleVoice();
 
+  if (!selectedFemaleVoice) {
+    showToast('Женский английский голос на этом устройстве не найден');
+    return;
+  }
+
   const utter = new SpeechSynthesisUtterance(text);
-  utter.lang = selectedFemaleVoice?.lang || 'en-GB';
-  if (selectedFemaleVoice) utter.voice = selectedFemaleVoice;
-  utter.rate = 0.86;
-  utter.pitch = 1.08;
+  utter.lang = selectedFemaleVoice.lang || 'en-GB';
+  utter.voice = selectedFemaleVoice;
+  utter.rate = 0.88;
+  utter.pitch = 1.0;
   utter.volume = 1;
 
   activeCard = card || null;
