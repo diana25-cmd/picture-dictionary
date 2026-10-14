@@ -182,19 +182,36 @@ if ('speechSynthesis' in window) speechSynthesis.onvoiceschanged = refreshVoices
 
 function voiceScore(v, accent) {
   const target = accent === 'gb' ? 'en-GB' : 'en-US';
-  let s = 0;
-  if ((v.lang || '').toLowerCase() === target.toLowerCase()) s += 100;
-  else if ((v.lang || '').toLowerCase().startsWith('en-')) s += 35;
+  const lang = (v.lang || '').toLowerCase();
   const n = (v.name || '').toLowerCase();
-  if (/natural|neural|premium|enhanced/.test(n)) s += 28;
-  if (/microsoft|google|apple|samantha|sonia|libby|serena|daniel|ryan|aria|jenny/.test(n)) s += 16;
+  let s = 0;
+
+  // Сначала ищем британский английский, но главное — не мужской баритон.
+  if (lang === target.toLowerCase()) s += 120;
+  else if (lang.startsWith('en-')) s += 30;
+
+  // Явно женские голоса на Android / Samsung / Windows.
+  if (/female|woman|girl/.test(n)) s += 240;
+
+  // Часто встречающиеся женские английские голоса на iOS/macOS/Windows/Android.
+  if (/samantha|serena|sonia|libby|aria|jenny|zira|hazel|susan|karen|moira|tessa|victoria|ava|allison|kate|fiona|martha|emma|olivia/.test(n)) s += 190;
+
+  // Качественные голоса получают небольшой бонус.
+  if (/natural|neural|premium|enhanced/.test(n)) s += 25;
+
+  // Мужские голоса жёстко исключаем, если устройство сообщает это в названии.
+  if (/male|man|boy/.test(n)) s -= 320;
+  if (/daniel|ryan|george|arthur|oliver|fred|alex|tom|david|mark|james/.test(n)) s -= 220;
+
   if (v.localService) s += 4;
   return s;
 }
 function pickVoice() {
   refreshVoices();
   const accent = accentEl.value;
-  return [...voices].sort((a,b)=>voiceScore(b,accent)-voiceScore(a,accent))[0] || null;
+  const english = voices.filter(v => (v.lang || '').toLowerCase().startsWith('en-'));
+  const pool = english.length ? english : voices;
+  return [...pool].sort((a,b)=>voiceScore(b,accent)-voiceScore(a,accent))[0] || null;
 }
 function showToast(msg) {
   toast.textContent = msg; toast.classList.add('show');
@@ -210,8 +227,8 @@ function speak(text, card) {
   const u = new SpeechSynthesisUtterance(text);
   u.lang = accentEl.value === 'gb' ? 'en-GB' : 'en-US';
   u.voice = pickVoice();
-  u.rate = 0.84;
-  u.pitch = 1.0;
+  u.rate = 0.88;
+  u.pitch = 1.12;
   u.volume = 1;
   u.onstart = () => card && card.classList.add('speaking');
   u.onend = u.onerror = () => card && card.classList.remove('speaking');
