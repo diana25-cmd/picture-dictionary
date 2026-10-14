@@ -120,7 +120,7 @@ button{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="dictionary-build" content="github-pages-emma-wav-2026-10-14-v1">
+<meta name="dictionary-build" content="github-pages-sonia-mp3-2026-10-14-v1">
 </head>
 <body>
 <div class="appbar">
@@ -161,7 +161,7 @@ button{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
       </div>
     </div>
     <div class="cards" id="cards"></div>
-    <div class="note">Используется единая заранее записанная британская женская озвучка Emma. Она одинаково звучит на любом устройстве.</div>
+    <div class="note">Используется единая заранее записанная британская женская озвучка Sonia. Она одинаково звучит на любом устройстве.</div>
   </section>
 </main>
 <div class="toast" id="toast"></div>
@@ -191,7 +191,7 @@ function showToast(msg) {
 async function loadFemaleManifest() {
   if (femaleManifest) return femaleManifest;
   if (!femaleManifestPromise) {
-    femaleManifestPromise = fetch('audio/female/manifest.json?v=20261014-emma1', {cache:'no-store'})
+    femaleManifestPromise = fetch('audio/sonia/manifest.json?v=20261014-sonia1', {cache:'no-store'})
       .then(r => {
         if (!r.ok) throw new Error('manifest load failed');
         return r.json();
@@ -228,7 +228,7 @@ async function speak(text, card) {
       return;
     }
 
-    const audio = new Audio(src + '?v=20261014-emma1');
+    const audio = new Audio(src + '?v=20261014-sonia1');
     audio.preload = 'auto';
     currentAudio = audio;
     activeCard = card || null;
